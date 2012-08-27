@@ -91,6 +91,4 @@ class QueryByObjectModelResource(ModelResource):
             qs_filter = "%s%s%s" % (db_field_name, LOOKUP_SEP, filter_type)
             qs_filters[qs_filter] = value
 
-        print dict_strip_unicode_keys(qs_filters)
-
         return dict_strip_unicode_keys(qs_filters)
