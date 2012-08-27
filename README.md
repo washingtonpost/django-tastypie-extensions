@@ -22,30 +22,34 @@ with the standard tastypie query syntax.
 
 Use this class in place of the standard ``ModelResource``.
 
-    """models.py"""
-    from django.db import models
+```python
 
-    class Agency(models.Model):
-        name = models.CharField(max_length=255)
-        revenue = models.DecimalField()
+"""models.py"""
+from django.db import models
 
-    class TopModel(models.Model):
-        name = models.CharField(max_length=255)
-        agency = models.ForeignKey(Agency)
+class Agency(models.Model):
+    name = models.CharField(max_length=255)
+    revenue = models.DecimalField()
+
+class TopModel(models.Model):
+    name = models.CharField(max_length=255)
+    agency = models.ForeignKey(Agency)
 
 
-    """api.py"""
-    from tastypie.api import Api
-    from tastypie_extensions import QueryByObjectModelResource
+"""api.py"""
+from tastypie.api import Api
+from tastypie_extensions import QueryByObjectModelResource
 
-    class MyExtendedResourceClass(QueryByObjectModelResource):
+class MyExtendedResourceClass(QueryByObjectModelResource):
 
-        class Meta:
-            queryset = TopModel
-            resource_name = 'topmodel'
+    class Meta:
+        queryset = TopModel
+        resource_name = 'topmodel'
 
-    my_api = Api('v2')
-    my_api.register(MyExtendedResourceClass())
+my_api = Api('v2')
+my_api.register(MyExtendedResourceClass())
+
+```
 
 You can query this using the normal tastypie syntax.
 
