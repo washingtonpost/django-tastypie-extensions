@@ -93,7 +93,7 @@ class QueryByObjectModelResource(ModelResource):
                 # Because the field_name and the filter_expr are backward,
                 # we need to set the field name = to filter expr
                 field_name = filter_expr
-                print filter_bits
+
             # If not, stick with standard tastypie stuff
             else:
                 filter_bits = filter_expr.split(LOOKUP_SEP)
