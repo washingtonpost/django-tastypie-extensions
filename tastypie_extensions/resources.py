@@ -12,41 +12,51 @@ class QueryByObjectModelResource(ModelResource):
     """
 
     def get_query_bits_from_dict(self, dictionary, keys_list=[], value=None):
+        """
+        A special method that examines dictionaries and extracts keys and values.
 
+        ``keys_list`` and ``value`` are required for the ``filter_bits`` list,
+        and ``value``, respectively, in  in ``::meth::<build_filters> build_filters``.
+        """
+        # If dictionary contains a query parameter, build the filter_bits
+        # based on that parameter
+        if dictionary.keys()[0] in self._meta.queryset.query.query_terms:
+            # check to see if the values are a dict
+            if isinstance(dictionary.values()[0], dict):
+                # Add the key that represents the field
+                keys_list.extend(dictionary.values()[0].keys())
+                # Add the key that represents the filter
+                keys_list.extend(dictionary.keys())
+                value = dictionary.values()[0].values()[0]
+
+            # If it's not a dictionary, then it is a direct key, value pair
+            else:
+                keys_list.extend(dictionary.keys())
+                if not value:
+                    value = dictionary.values()[0]
+
+            return(keys_list, value)
+
+        # Iterate over the dictionary and create a keys_list
         for key, expr in dictionary.items():
+            # If this is a dict, extract the key and pass it back into this method
             if isinstance(expr, dict):
                 keys_list.append(key)
                 keys_list, value = self.get_query_bits_from_dict(expr,
                     keys_list=keys_list, value=value)
-
-            if len(expr) > 1 and 'filter' in expr:
-                filter_key = expr.pop('filter')
-                final_key, value = expr.items()[0]
-                keys_list.extend([final_key, filter_key])
+            # If this is just a key/value pair, it is the end of iteration,
+            # add to keys_list, value
+            else:
+                keys_list.append(key)
+                value = expr
 
         return(keys_list, value)
 
     def build_filters(self, filters=None):
         """
-        Given a dictionary of filters, create the necessary ORM-level filters.
-
-        Keys should be resource fields, **NOT** model fields.
-
-        Valid values are either a list of Django filter types (i.e.
-        ``['startswith', 'exact', 'lte']``), the ``ALL`` constant or the
-        ``ALL_WITH_RELATIONS`` constant.
-
-        At the declarative level:
-            filtering = {
-                'resource_field_name': ['exact', 'startswith', 'endswith',
-                    'contains'],
-                'resource_field_name_2': ['exact', 'gt', 'gte', 'lt', 'lte',
-                    'range'],
-                'resource_field_name_3': ALL,
-                'resource_field_name_4': ALL_WITH_RELATIONS,
-                ...
-            }
-        Accepts the filters as a dict. None by default, meaning no filters.
+        An enhanced tastypie method that will first check to see if a value
+        passed inside of a filter can be decoded as JSON.  If so, it passes those
+        values to ``::meth::<get_query_bits_from_dict> get_query_bits_from_dict``.
         """
         if filters is None:
             filters = {}
@@ -68,11 +78,24 @@ class QueryByObjectModelResource(ModelResource):
             # Check first to see if a value can be decoded as json
             try:
                 value_dict = json.loads(value)
+                # Because the python json module is not as strict as JSON standards
+                # We must check to make sure that the value loaded is a dict
+                if not isinstance(value_dict, dict):
+                    value_dict = None
+            except ValueError:
+                value_dict = None
+
+            # If a value is decoded, it passes that dict into a special method
+            if value_dict:
+                # Get the value and filter_bits from the method.
                 filter_bits, value = self.get_query_bits_from_dict(value_dict,
                     keys_list=[], value=None)
+                # Because the field_name and the filter_expr are backward,
+                # we need to set the field name = to filter expr
                 field_name = filter_expr
-
-            except ValueError:
+                print filter_bits
+            # If not, stick with standard tastypie stuff
+            else:
                 filter_bits = filter_expr.split(LOOKUP_SEP)
                 field_name = filter_bits.pop(0)
 
