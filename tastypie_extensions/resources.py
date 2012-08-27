@@ -1,7 +1,7 @@
 import json
 
 from django.db.models.sql.constants import QUERY_TERMS, LOOKUP_SEP
-from tastypie import ModelResource
+from tastypie.resources import ModelResource
 from tastypie.utils import dict_strip_unicode_keys
 
 
@@ -52,7 +52,6 @@ class QueryByObjectModelResource(ModelResource):
             filters = {}
 
         qs_filters = {}
-
         if hasattr(self._meta, 'queryset'):
             # Get the possible query terms from the current QuerySet.
             if hasattr(self._meta.queryset.query.query_terms, 'keys'):
@@ -91,4 +90,7 @@ class QueryByObjectModelResource(ModelResource):
             db_field_name = LOOKUP_SEP.join(lookup_bits)
             qs_filter = "%s%s%s" % (db_field_name, LOOKUP_SEP, filter_type)
             qs_filters[qs_filter] = value
+
+        print dict_strip_unicode_keys(qs_filters)
+
         return dict_strip_unicode_keys(qs_filters)
