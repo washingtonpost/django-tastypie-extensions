@@ -11,6 +11,35 @@ class QueryByObjectModelResource(ModelResource):
     ``query_by_object`` parameter of the URL
     """
 
+    def filter_value_to_python(self, value, field_name, filters, filter_expr,
+            filter_type):
+        """
+        Turn the string ``value`` into a python object.
+        """
+        # Simple values
+        if value in ['true', 'True', True]:
+            value = True
+        elif value in ['false', 'False', False]:
+            value = False
+        elif value in ('nil', 'none', 'None', None):
+            value = None
+
+        # Split on ',' if not empty string and either an in or range filter.
+        if filter_type in ('in', 'range') and len(value):
+            if isinstance(value, list):
+                return(value)
+
+            elif hasattr(filters, 'getlist'):
+                value = []
+
+                for part in filters.getlist(filter_expr):
+                    value.extend(part.split(','))
+
+            else:
+                value = value.split(',')
+
+        return value
+
     def get_query_bits_from_dict(self, dictionary, keys_list=[], value=None):
         """
         A special method that examines dictionaries and extracts keys and values.
